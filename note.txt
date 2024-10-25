@@ -1,0 +1,15 @@
+
+Lọc cộng tác:
+- người dùng cũng thích: like
+- người dùng khác cũng nghe: songplayhistory
+
+Lọc theo người dùng:
+- lịch sử tìm kiếm
+- thông tin các nhạc đã nghe
+
+
+
+Chức năng tìm kiếm: 
+- lọc theo song, album, nghệ sĩ
+    - độ tương đồng
+    
