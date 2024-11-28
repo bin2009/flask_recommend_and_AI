@@ -1,0 +1,9 @@
+/BIN
+.venv
+/model
+__pycache__
+.env
+.gitattributes
+/weight_model
+*.csv
+*.xlsx
