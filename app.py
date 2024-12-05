@@ -141,15 +141,28 @@ def token_required(f):
 
 
 # đề xuất------------------------------------------------
-
+def handle_errors(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception as e:
+            response = {
+                'status': 'error',
+                'message': str(e)
+            }
+            return jsonify(response), 500
+    return decorated_function
 
 @app.route('/users', methods=['GET'])
+@handle_errors
 def get_users():
     users = User.query.all()
     return jsonify([{'id': user.id, 'username': user.username, 'email': user.email} for user in users])
 
 
 @app.route('/songs', methods=['GET'])
+@handle_errors
 def get_songs():
     songs = Song.query.all()
     return jsonify([
@@ -160,6 +173,7 @@ def get_songs():
     ])
 
 @app.route('/comments', methods=['GET'])
+@handle_errors
 def get_comments():
     comments = Comment.query.all()
     return jsonify([
@@ -175,6 +189,7 @@ def get_comments():
 
 
 @app.route('/actions/comment', methods=['POST'])
+@handle_errors
 @token_required
 def post_comment(current_user):
     data = request.json  # songId và content
@@ -248,6 +263,7 @@ def post_comment(current_user):
 
 @app.route('/recommend', methods=['GET'])
 @token_required
+@handle_errors
 def recommend(current_user):
     # params: page, page size
     page = request.args.get('page', 1, type=int)
@@ -305,6 +321,7 @@ def recommend(current_user):
 # đề xuất nghệ sĩ dựa trên follow
 @app.route('/recommend_artist', methods=['GET'])
 @token_required
+@handle_errors
 def recommend_artist(current_user):
     # params: page, page size
     page = request.args.get('page', 1, type=int)
@@ -349,7 +366,7 @@ def recommend_artist(current_user):
 
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# if __name__ == '__main__':
+#     app.run(debug=True)
 
 
