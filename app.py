@@ -1,6 +1,6 @@
 import torch
 from flask import Flask, request, jsonify
-# from load_model import model, tokenizer
+from load_model import model, tokenizer
 from config import Config
 from models import db, User, Comment, Song, Like, SongPlayHistory, Album, AlbumImage, AlbumSong, Artist, Follow
 import logging
@@ -220,9 +220,21 @@ def post_comment(current_user):
         db.session.add(new_comment)
         db.session.commit()
 
+        user = User.query.get(current_user.id)
+
         # Tạo từ điển cho comment
         comment_data = {
             attr: getattr(new_comment, attr) for attr in ['id', 'commentParentId', 'userId', 'songId', 'content', 'hide', 'createdAt', 'updatedAt']
+        }
+
+        comment_data['user'] = {
+            'id': user.id,
+            'username': user.username,  
+            'email': user.email,
+            'image': user.image,
+            'role': user.role,
+            'email': user.email,
+            'name': user.name
         }
 
         response['status'] = 'success'
