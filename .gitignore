@@ -4,7 +4,7 @@
 __pycache__
 .env
 .gitattributes
-/weight_model
+# /weight_model
 *.csv
 *.xlsx
 /venv
