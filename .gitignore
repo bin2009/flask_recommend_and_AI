@@ -8,3 +8,5 @@ __pycache__
 *.csv
 *.xlsx
 /venv
+/weight_model
+/weight_model2
