@@ -21,21 +21,21 @@ class Comment(db.Model):
 
     user = db.relationship('User', back_populates='comments')
     song = db.relationship('Song', back_populates='comments')
+    reports = db.relationship('Report', back_populates='comment')
+
 
 class User(db.Model):
     __tablename__ = 'User'
 
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
-    role = db.Column(Enum('Admin', 'User', 'Guest'), nullable=False)
+    role = db.Column(Enum('Admin', 'User'), nullable=False)
     username = db.Column(db.String, nullable=False)
     email = db.Column(db.String, nullable=False)
     password = db.Column(db.String, nullable=False)
-    secondPassword = db.Column(db.String, nullable=True)
-    statusPassword = db.Column(db.Boolean, nullable=False, default=False)
     name = db.Column(db.String, nullable=True)
     image = db.Column(db.String, nullable=True)
-    accountType = db.Column(Enum('Premium', 'Free'), nullable=False, default='Free')
-    status = db.Column(db.Boolean, nullable=False, default=True)
+    accountType = db.Column(Enum('PREMIUM', 'FREE'), nullable=False, default='Free')
+    status = db.Column(Enum('NORMAL', 'LOCK3', 'LOCK7', 'PERMANENT'), nullable=False, default='NORMAL')
     
 
     comments = db.relationship('Comment', back_populates='user')
@@ -43,6 +43,7 @@ class User(db.Model):
     likes = db.relationship('Like', back_populates='user')
     play_histories = db.relationship('SongPlayHistory', back_populates='user')
     follows = db.relationship('Follow', back_populates='user')
+    reports = db.relationship('Report', back_populates='user')
 
 
 
@@ -57,7 +58,7 @@ class Song(db.Model):
     privacy = db.Column(db.Boolean, nullable=False, default=False)
     uploadUserId = db.Column(UUID(as_uuid=True), db.ForeignKey('User.id'), nullable=True)
     releaseDate = db.Column(db.Date, nullable=True)
-    viewCount = db.Column(db.Integer, nullable=True, default=0)
+    image = db.Column(db.String, nullable=True)
     createdAt = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     comments = db.relationship('Comment', back_populates='song')
@@ -131,7 +132,6 @@ class Artist(db.Model):
     name = db.Column(db.String, nullable=False)
     avatar = db.Column(db.Text, nullable=True)
     bio = db.Column(db.Text, nullable=True)
-    followersCount = db.Column(db.Integer, nullable=True)
     date = db.Column(db.Date, nullable=True)
 
     artist_genres = db.relationship('ArtistGenre', back_populates='artist')
@@ -181,3 +181,18 @@ class Follow(db.Model):
 
     user = db.relationship('User', back_populates='follows')
     artist = db.relationship('Artist', back_populates='follows')
+
+
+class Report(db.Model):
+    __tablename__ = 'Report'
+
+    id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+    userId = db.Column(UUID(as_uuid=True), db.ForeignKey('User.id'), nullable=True)
+    commentId = db.Column(UUID(as_uuid=True), db.ForeignKey('Comment.id'), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    status = db.Column(Enum('AI', 'PENDING', 'DELETE' , 'NOTDELETE'), nullable=False, default='PENDING')
+    createdAt = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updatedAt = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user = db.relationship('User', back_populates='reports')
+    comment = db.relationship('Comment', back_populates='reports')

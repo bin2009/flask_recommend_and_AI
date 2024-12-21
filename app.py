@@ -2,7 +2,7 @@ import torch
 from flask import Flask, request, jsonify
 from load_model import model, tokenizer
 from config import Config
-from models import db, User, Comment, Song, Like, SongPlayHistory, Album, AlbumImage, AlbumSong, Artist, Follow
+from models import db, User, Comment, Song, Like, SongPlayHistory, Album, AlbumImage, AlbumSong, Artist, Follow, Report
 import logging
 import jwt
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
@@ -214,52 +214,88 @@ def post_comment(current_user):
         'score': None
     }
 
-    if float(toxic) > 0.9:
+    try:
+        if float(toxic) > 0.9:
+            # check comment parent có không
+            comment = Comment.query.get(data.get('commentParentId'))
+            if comment: 
+                # tạo comment -> tạo report với status là AI
+                new_comment = Comment(
+                    id=uuid.uuid4(),
+                    commentParentId=data.get('commentParentId'),
+                    userId=current_user.id,
+                    songId=songId,
+                    content=content,
+                    hide=True,
+                    createdAt=datetime.now(vietnam_tz),
+                    updatedAt=datetime.now(vietnam_tz)
+                )
+                db.session.add(new_comment)
+
+                new_report = Report(
+                    id=uuid.uuid4(),
+                    userId=None,
+                    commentId=new_comment.id,
+                    content='Comments that violate community standards',
+                    status='AI',
+                    createdAt=datetime.now(vietnam_tz),
+                    updatedAt=datetime.now(vietnam_tz)
+                )
+                db.session.add(new_report)
+                db.session.commit()
+            
+                response['status'] = 'error'
+                response['message'] = 'Comment blocked due to community guidelines violation.'
+                response['score'] = output_list
+                return jsonify(response), HTTPStatus.OK
+            else:
+                response['status'] = 'error'
+                response['message'] = 'Comment parent not found'
+                del response['score']
+                return jsonify(response), HTTPStatus.NOT_FOUND
+        else:
+            # tạo mới comment
+            new_comment = Comment(
+                id=uuid.uuid4(),
+                commentParentId=data.get('commentParentId'),
+                userId=current_user.id,
+                songId=songId,
+                content=content,
+                hide=False,
+                createdAt=datetime.now(vietnam_tz),
+                updatedAt=datetime.now(vietnam_tz)
+            )
+            db.session.add(new_comment)
+            db.session.commit()
+
+            user = User.query.get(current_user.id)
+
+            # Tạo từ điển cho comment
+            comment_data = {
+                attr: getattr(new_comment, attr) for attr in ['id', 'commentParentId', 'userId', 'songId', 'content', 'hide', 'createdAt', 'updatedAt']
+            }
+
+            comment_data['user'] = {
+                'id': user.id,
+                'username': user.username,  
+                'email': user.email,
+                'image': user.image,
+                'role': user.role,
+                'name': user.name
+            }
+
+            response['status'] = 'success'
+            response['message'] = 'Comment success'
+            response['comment'] = comment_data
+            response['score'] = output_list
+            return jsonify(response), HTTPStatus.OK
+        
+            # return jsonify({'status': 'success', 'message': 'Comment success', 'comment': comment_data, 'score': output_list}), HTTPStatus.OK
+    except Exception as e:
+        # Giao dịch sẽ rollback tự động khi gặp lỗi
         response['status'] = 'error'
-        response['message'] = 'Comment blocked due to community guidelines violation.'
-        response['score'] = output_list
-        return jsonify(response), HTTPStatus.OK
-        # return jsonify({'status': 'error', 'message': 'Comment blocked due to community guidelines violation.', 'score': output_list}), HTTPStatus.OK
-    else:
-        # tạo mới comment
-        new_comment = Comment(
-            id=uuid.uuid4(),
-            commentParentId=data.get('commentParentId'),
-            userId=current_user.id,
-            songId=songId,
-            content=content,
-            hide=False,
-            createdAt=datetime.now(vietnam_tz),
-            updatedAt=datetime.now(vietnam_tz)
-        )
-        db.session.add(new_comment)
-        db.session.commit()
-
-        user = User.query.get(current_user.id)
-
-        # Tạo từ điển cho comment
-        comment_data = {
-            attr: getattr(new_comment, attr) for attr in ['id', 'commentParentId', 'userId', 'songId', 'content', 'hide', 'createdAt', 'updatedAt']
-        }
-
-        comment_data['user'] = {
-            'id': user.id,
-            'username': user.username,  
-            'email': user.email,
-            'image': user.image,
-            'role': user.role,
-            'email': user.email,
-            'name': user.name
-        }
-
-        response['status'] = 'success'
-        response['message'] = 'Comment success'
-        response['comment'] = comment_data
-        response['score'] = output_list
-        return jsonify(response), HTTPStatus.OK
-    
-        # return jsonify({'status': 'success', 'message': 'Comment success', 'comment': comment_data, 'score': output_list}), HTTPStatus.OK
-
+        response['message'] = str(e)
+        return jsonify(response), HTTPStatus.INTERNAL_SERVER_ERROR    
 
 @app.route('/recommend', methods=['GET'])
 @token_required
