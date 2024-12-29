@@ -1,9 +1,20 @@
 import torch
 import gdown
+import os
 # Link tải file từ Google Drive (có thể cần chỉnh sửa link thành ID)
-url = 'https://drive.google.com/uc?id=1m-2Q4EYxARBobdObFizIICBr1nHJAO55'
-output = 'weight_model2/a.pth'
-gdown.download(url, output, quiet=False)
+# url = 'https://drive.google.com/uc?id=1m-2Q4EYxARBobdObFizIICBr1nHJAO55'
+# output = 'weight_model2/a.pth'
+# gdown.download(url, output, quiet=False)
+
+import requests
+url = "https://melodies.sgp1.cdn.digitaloceanspaces.com/phoBertModel_weights_50k_8.pth"
+response = requests.get(url)
+
+save_path = "weight_model2/a.pth"
+os.makedirs("weight_model2", exist_ok=True)  # Tạo thư mục nếu chưa tồn tại
+with open("a.pth", "wb") as f:
+    f.write(response.content)
+
 
 from transformers import AutoModel, AutoTokenizer
 
