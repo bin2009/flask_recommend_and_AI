@@ -12,7 +12,7 @@ response = requests.get(url)
 
 save_path = "weight_model2/a.pth"
 os.makedirs("weight_model2", exist_ok=True)  # Tạo thư mục nếu chưa tồn tại
-with open("a.pth", "wb") as f:
+with open(save_path, "wb") as f:
     f.write(response.content)
 
 
