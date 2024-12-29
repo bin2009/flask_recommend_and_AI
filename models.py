@@ -132,7 +132,7 @@ class Artist(db.Model):
     name = db.Column(db.String, nullable=False)
     avatar = db.Column(db.Text, nullable=True)
     bio = db.Column(db.Text, nullable=True)
-    date = db.Column(db.Date, nullable=True)
+    hide = db.Column(db.Boolean, nullable=True, default=False)
 
     artist_genres = db.relationship('ArtistGenre', back_populates='artist')
     artist_songs = db.relationship('ArtistSong', back_populates='artist')

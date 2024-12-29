@@ -38,6 +38,7 @@ tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base-v2")
 model = PhoBertModel(phobert)
 
 # Bước 4: Tải trọng số vào mô hình
-weights_path = './weight_model2/a.pth'  # Đường dẫn tới file trọng số
+# weights_path = './weight_model/phoBertModel_weights_50k_8.pth'  # Đường dẫn tới file trọng số
+weights_path = './weight_model2/a.pth' # Đường dẫn tới file trọng số
 model.load_state_dict(torch.load(weights_path, map_location=torch.device('cpu')))
 model.eval()

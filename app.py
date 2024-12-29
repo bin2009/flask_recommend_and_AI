@@ -18,6 +18,18 @@ import numpy as np
 from recommend import DataLoader
 from sqlalchemy.orm import joinedload
 
+import json
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+from Crypto.Protocol.KDF import PBKDF2
+from Crypto.Random import get_random_bytes
+import base64
+import os
+import hashlib
+
+SECRET_KEY = os.getenv('ENCODE_KEY')
+DO_SPACES_BUCKET = os.getenv('DO_SPACES_BUCKET')
+DO_SPACES_ENDPOINT = os.getenv('DO_SPACES_ENDPOINT')
 
 app = Flask(__name__)
 CORS(app) 
@@ -31,7 +43,55 @@ db.init_app(app)
 # khởi chay đề xuất
 data_loader = DataLoader()
 
+
+# -------------------- encode
+
+def derive_key_and_iv(password: str, salt: bytes):
+    data = b''
+    key_iv = b''
+    
+    while len(key_iv) < 48:
+        md5 = hashlib.md5()
+        md5.update(data + password.encode() + salt)
+        data = md5.digest()
+        key_iv += data
+    
+    return key_iv[:32], key_iv[32:48]
+
+def encrypt_like_cryptojs(data: str, secret_key: str) -> str:
+    try:
+        try:
+            payload = data.split('PBL6/')[1]
+        except:
+            payload = data
+            
+        json_payload = json.dumps(payload) 
+        
+        salt = get_random_bytes(8)
+        
+        key, iv = derive_key_and_iv(secret_key, salt)
+        
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        
+        padded_data = pad(json_payload.encode(), AES.block_size) 
+        encrypted_data = cipher.encrypt(padded_data)
+        
+        result = b"Salted__" + salt + encrypted_data
+        
+        return base64.b64encode(result).decode()
+        
+    except Exception as e:
+        print(f"Encryption error: {str(e)}")
+        raise e
+
+# ----------------------
+
+
+
 # with app.app_context():
+vietnam_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+def format_time(timestamp):
+    return timestamp.astimezone(vietnam_tz).strftime('%m/%d/%Y %H:%M:%S')
 
 
 def get_song(ids):
@@ -65,11 +125,11 @@ def get_song(ids):
         song_dict = {
             'id': str(song.id),
             'title': song.title,
-            'releaseDate': song.releaseDate,
+            'releaseDate': format_time(song.releaseDate),
             'duration': song.duration,
-            'lyric': song.lyric,
-            'filePathAudio': song.filePathAudio,
-            'createdAt': song.createdAt,
+            'lyric':  song.lyric,
+            'filePathAudio': encrypt_like_cryptojs(song.filePathAudio, SECRET_KEY) if song.filePathAudio and "PBL6" in song.filePathAudio else song.filePathAudio,
+            'createdAt': format_time(song.createdAt),
             # Thêm các thuộc tính bổ sung nếu cần
         }
         if song.album:
@@ -77,7 +137,10 @@ def get_song(ids):
                 'albumId': str(alb.albumId),
                 'title': alb.title,
                 'albumType': alb.albumType,
-                'albumImages': [{'image': img.image, 'size': img.size} for img in alb.images]
+                'albumImages': [{'image': f"https://{DO_SPACES_BUCKET}.{DO_SPACES_ENDPOINT}/{img.image}" 
+                                    if img.image and "PBL6" in img.image 
+                                    else img.image , 'size': img.size} 
+                    for img in alb.images]
             } for alb in song.album]
         songs_list.append(song_dict)
         if song.artists:
@@ -110,6 +173,8 @@ def get_artist(ids):
             'id': str(artist.id),
             'name': artist.name,
             'avatar': artist.avatar,
+            'avatar': f"https://{DO_SPACES_BUCKET}.{DO_SPACES_ENDPOINT}/{artist.avatar}" if artist.avatar and "PBL6" in artist.avatar else artist.avatar,
+
             'bio': artist.bio,
             'genres': [{'genreId': str(genre.genreId), 'name': genre.name} for genre in artist.genres],
         }
@@ -206,7 +271,10 @@ def post_comment(current_user):
     toxic =  output_list[0][0]
 
     # Định nghĩa múi giờ Việt Nam
-    vietnam_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+    # vietnam_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+
+    # def format_time(timestamp):
+    #     return timestamp.astimezone(vietnam_tz).strftime('%m/%d/%Y %H:%M:%S')
 
     response = {
         'status': '',
@@ -274,6 +342,10 @@ def post_comment(current_user):
             comment_data = {
                 attr: getattr(new_comment, attr) for attr in ['id', 'commentParentId', 'userId', 'songId', 'content', 'hide', 'createdAt', 'updatedAt']
             }
+
+            # Format thời gian
+            comment_data['createdAt'] = format_time(new_comment.createdAt)
+            comment_data['updatedAt'] = format_time(new_comment.updatedAt)
 
             comment_data['user'] = {
                 'id': user.id,
@@ -398,6 +470,13 @@ def recommend_artist(current_user):
     # lấy ra các artist
 
 
+@app.route('/haha', methods=['GET'])
+def testhaha():
+    test_data = "PRIVATE/MELODIES/lyricFile/1631863912220.json"
+    secret_key = '4Uc/8L1zNPg2yNtxdu+jH/mkKpqUjEZz5bEPJjbWS8fOFHnKTMufyIKvryc6Z51V'
+    encrypted = encrypt_like_cryptojs(test_data, secret_key)
+    print("encrypted: ", encrypted)
+    return jsonify({'status': 'success', 'message': 'haha', 'data': encrypted})
     
 
 
