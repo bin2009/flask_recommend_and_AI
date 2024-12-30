@@ -286,41 +286,36 @@ def post_comment(current_user):
         if float(toxic) > 0.9:
             # check comment parent có không
             comment = Comment.query.get(data.get('commentParentId'))
-            if comment: 
-                # tạo comment -> tạo report với status là AI
-                new_comment = Comment(
-                    id=uuid.uuid4(),
-                    commentParentId=data.get('commentParentId'),
-                    userId=current_user.id,
-                    songId=songId,
-                    content=content,
-                    hide=True,
-                    createdAt=datetime.now(vietnam_tz),
-                    updatedAt=datetime.now(vietnam_tz)
-                )
-                db.session.add(new_comment)
+            # tạo comment -> tạo report với status là AI
+            new_comment = Comment(
+                id=uuid.uuid4(),
+                commentParentId=data.get('commentParentId') if comment else null,
+                userId=current_user.id,
+                songId=songId,
+                content=content,
+                hide=True,
+                createdAt=datetime.now(vietnam_tz),
+                updatedAt=datetime.now(vietnam_tz)
+            )
+            db.session.add(new_comment)
 
-                new_report = Report(
-                    id=uuid.uuid4(),
-                    userId=None,
-                    commentId=new_comment.id,
-                    content='Comments that violate community standards',
-                    status='AI',
-                    createdAt=datetime.now(vietnam_tz),
-                    updatedAt=datetime.now(vietnam_tz)
-                )
-                db.session.add(new_report)
-                db.session.commit()
-            
-                response['status'] = 'error'
-                response['message'] = 'Comment blocked due to community guidelines violation.'
-                response['score'] = output_list
-                return jsonify(response), HTTPStatus.OK
-            else:
-                response['status'] = 'error'
-                response['message'] = 'Comment parent not found'
-                del response['score']
-                return jsonify(response), HTTPStatus.NOT_FOUND
+            new_report = Report(
+                id=uuid.uuid4(),
+                userId=None,
+                commentId=new_comment.id,
+                content='Comments that violate community standards',
+                status='AI',
+                createdAt=datetime.now(vietnam_tz),
+                updatedAt=datetime.now(vietnam_tz)
+            )
+            db.session.add(new_report)
+            db.session.commit()
+        
+            response['status'] = 'error'
+            response['message'] = 'Comment blocked due to community guidelines violation.'
+            response['score'] = output_list
+            return jsonify(response), HTTPStatus.OK
+        
         else:
             # tạo mới comment
             new_comment = Comment(
