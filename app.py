@@ -353,7 +353,7 @@ def post_comment(current_user):
                 'id': user.id,
                 'username': user.username,  
                 'email': user.email,
-                'image': user.image,
+                'image': f"https://{DO_SPACES_BUCKET}.{DO_SPACES_ENDPOINT}/{user.image}" if user.image and "PBL6" in user.image else user.image,
                 'role': user.role,
                 'name': user.name
             }
