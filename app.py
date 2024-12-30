@@ -286,6 +286,10 @@ def post_comment(current_user):
         if float(toxic) > 0.9:
             # check comment parent có không
             comment = Comment.query.get(data.get('commentParentId'))
+
+            current_time = datetime.now(vietnam_tz)
+            formatted_time = format_time(current_time)  
+
             # tạo comment -> tạo report với status là AI
             new_comment = Comment(
                 id=uuid.uuid4(),
@@ -294,8 +298,8 @@ def post_comment(current_user):
                 songId=songId,
                 content=content,
                 hide=True,
-                createdAt=datetime.now(vietnam_tz),
-                updatedAt=datetime.now(vietnam_tz)
+                createdAt=formatted_time,
+                updatedAt=formatted_time
             )
             db.session.add(new_comment)
 
@@ -305,8 +309,8 @@ def post_comment(current_user):
                 commentId=new_comment.id,
                 content='Comments that violate community standards',
                 status='AI',
-                createdAt=datetime.now(vietnam_tz),
-                updatedAt=datetime.now(vietnam_tz)
+                createdAt=formatted_time,
+                updatedAt=formatted_time
             )
             db.session.add(new_report)
             db.session.commit()
@@ -317,6 +321,9 @@ def post_comment(current_user):
             return jsonify(response), HTTPStatus.OK
         
         else:
+            current_time = datetime.now(vietnam_tz)
+            formatted_time = format_time(current_time)  
+
             # tạo mới comment
             new_comment = Comment(
                 id=uuid.uuid4(),
@@ -325,8 +332,8 @@ def post_comment(current_user):
                 songId=songId,
                 content=content,
                 hide=False,
-                createdAt=datetime.now(vietnam_tz),
-                updatedAt=datetime.now(vietnam_tz)
+                createdAt=formatted_time,
+                updatedAt=formatted_time
             )
             db.session.add(new_comment)
             db.session.commit()
