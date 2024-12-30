@@ -298,8 +298,8 @@ def post_comment(current_user):
                 songId=songId,
                 content=content,
                 hide=True,
-                createdAt=formatted_time,
-                updatedAt=formatted_time
+                createdAt=datetime.now(vietnam_tz),
+                updatedAt=datetime.now(vietnam_tz)
             )
             db.session.add(new_comment)
 
@@ -309,8 +309,8 @@ def post_comment(current_user):
                 commentId=new_comment.id,
                 content='Comments that violate community standards',
                 status='AI',
-                createdAt=formatted_time,
-                updatedAt=formatted_time
+                createdAt=datetime.now(vietnam_tz),
+                updatedAt=datetime.now(vietnam_tz)
             )
             db.session.add(new_report)
             db.session.commit()
@@ -332,8 +332,8 @@ def post_comment(current_user):
                 songId=songId,
                 content=content,
                 hide=False,
-                createdAt=formatted_time,
-                updatedAt=formatted_time
+                createdAt=datetime.now(vietnam_tz),
+                updatedAt=datetime.now(vietnam_tz)
             )
             db.session.add(new_comment)
             db.session.commit()
