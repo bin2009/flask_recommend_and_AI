@@ -289,7 +289,7 @@ def post_comment(current_user):
             # tạo comment -> tạo report với status là AI
             new_comment = Comment(
                 id=uuid.uuid4(),
-                commentParentId=data.get('commentParentId') if comment else null,
+                commentParentId=data.get('commentParentId') if comment else None,
                 userId=current_user.id,
                 songId=songId,
                 content=content,
