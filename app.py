@@ -358,6 +358,8 @@ def post_comment(current_user):
                 'name': user.name
             }
 
+            comment_data['myComment'] = True
+
             response['status'] = 'success'
             response['message'] = 'Comment success'
             response['comment'] = comment_data
